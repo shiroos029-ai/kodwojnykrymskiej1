@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Kod wojny krymskiej — prosty szyfr rzymski</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url("old.avif") no-repeat center center fixed; 
+      background-size: cover; 
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: rgba(30, 41, 59, 0.85); 
+      padding: 20px;
+      border-radius: 10px;
+      width: 520px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    h1 { color: #facc15; margin: 0 0 8px 0 }
+    textarea, input, button { margin: 8px 0; padding: 8px; border-radius: 5px; border: none }
+    textarea { width: 92%; height: 100px; resize: vertical }
+    button { background: #facc15; color: #010202; font-weight: 700; cursor: pointer; padding: 8px 12px; border-radius: 6px }
+    button:hover { background: #fde047 }
+    label { display: block; margin-top: 10px }
+    footer { margin-top: 12px; color: #9ca3af; font-size: 14px }
+
+    a.info-link {
+      color: #93c5fd;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a.info-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Kod wojny krymskiej</h1>
+    <p>
+      <a class="info-link" href="https://pl.wikipedia.org/wiki/Szyfr_Cezara" target="_blank">
+        Prosty symulator szyfru Cezara + zapis rzymski
+      </a><br>
+      <small>Symulator pozwala zaszyfrować tekst przesuwając litery o wybraną liczbę miejsc (szyfr Cezara), 
+      a następnie zapisać wynik w formie rzymskich liczb odpowiadających literom alfabetu.</small>
+    </p>
+
+    <label for="tekst">Wpisz wiadomość:</label>
+    <textarea id="tekst" placeholder="Tu wpisz depeszę..."></textarea>
+
+    <label for="klucz">Przesunięcie (klucz):</label>
+    <input type="number" id="klucz" value="3" min="-25" max="25">
+
+    <div style="margin-top:8px">
+      <button onclick="szyfruj()">Szyfruj</button>
+      <button onclick="deszyfruj()">Deszyfruj</button>
+    </div>
+
+    <label style="margin-top:8px"><input type="checkbox" id="rzymskie"> Zamień na liczby rzymskie (A→I ... Z→XXVI)</label>
+
+    <label for="wynik">Wynik:</label>
+    <textarea id="wynik" readonly></textarea>
+
+    <footer>
+      Projekt wykonali: <strong>Matteo Jorga</strong>, <strong>Dominik Szymański</strong> i <strong>Jakub Białkowski</strong>
+    </footer>
+  </div>
+
+  <script>
+    const ROMAN = ["","I","II","III","IV","V","VI","VII","VIII","IX",
+      "X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX",
+      "XX","XXI","XXII","XXIII","XXIV","XXV","XXVI"];
+
+    const ROMAN_TO_IDX = {};
+    for (let i=1;i<=26;i++) ROMAN_TO_IDX[ROMAN[i]] = i;
+
+    function caesarShift(ch, k) {
+      if (/[A-Z]/.test(ch)) {
+        return String.fromCharCode((ch.charCodeAt(0) - 65 + k + 2600) % 26 + 65);
+      } else if (/[a-z]/.test(ch)) {
+        return String.fromCharCode((ch.charCodeAt(0) - 97 + k + 2600) % 26 + 97);
+      } else return ch;
+    }
+
+    function caesar(text, k) {
+      return text.split('').map(c => caesarShift(c, k)).join('');
+    }
+
+    function toRoman(text) {
+      const parts = [];
+      for (const ch of text) {
+        if (/[A-Za-z]/.test(ch)) {
+          const idx = ch.toUpperCase().charCodeAt(0) - 65 + 1;
+          parts.push(ROMAN[idx]);
+        } else {
+          parts.push(ch);
+        }
+      }
+      return parts.join(' ');
+    }
+
+    function fromRoman(text) {
+      const tokens = text.trim().split(/\s+/);
+      const out = [];
+      for (const t of tokens) {
+        if (ROMAN_TO_IDX[t]) {
+          const idx = ROMAN_TO_IDX[t]; 
+          out.push(String.fromCharCode(65 + idx - 1)); 
+        } else {
+          if (t.length === 1) out.push(t);
+          else for (const ch of t) out.push(ch);
+        }
+      }
+      return out.join('');
+    }
+
+    function szyfruj() {
+      const tekst = document.getElementById('tekst').value;
+      const k = parseInt(document.getElementById('klucz').value) || 0;
+      let out = caesar(tekst, k);
+      if (document.getElementById('rzymskie').checked) out = toRoman(out);
+      document.getElementById('wynik').value = out;
+    }
+
+    function deszyfruj() {
+      let tekst = document.getElementById('tekst').value;
+      const k = parseInt(document.getElementById('klucz').value) || 0;
+      const tokens = tekst.trim().split(/\s+/);
+      const hasRomanToken = tokens.some(t => ROMAN_TO_IDX[t]);
+      if (document.getElementById('rzymskie').checked || hasRomanToken) {
+        tekst = fromRoman(tekst);
+      }
+      const out = caesar(tekst, -k);
+      document.getElementById('wynik').value = out;
+    }
+  </script>
+</body>
+</html>
